@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 from yolox.utils import bboxes_iou, meshgrid
 
-from .losses import IOUloss
+from .losses import IOUloss, FocalLoss
 from .network_blocks import BaseConv, DWConv
 
 
@@ -126,6 +126,7 @@ class YOLOXHead(nn.Module):
         self.l1_loss = nn.L1Loss(reduction="none")
         self.bcewithlog_loss = nn.BCEWithLogitsLoss(reduction="none")
         self.iou_loss = IOUloss(reduction="none")
+        self.focal_loss = FocalLoss()
         self.strides = strides
         self.grids = [torch.zeros(1)] * len(in_channels)
 
@@ -391,6 +392,9 @@ class YOLOXHead(nn.Module):
         loss_iou = (
             self.iou_loss(bbox_preds.view(-1, 4)[fg_masks], reg_targets)
         ).sum() / num_fg
+        loss_focal = (
+            self.focal_loss(bbox_preds.view(-1, 4)[fg_masks], reg_targets)
+        ).sum() / num_fg
         loss_obj = (
             self.bcewithlog_loss(obj_preds.view(-1, 1), obj_targets)
         ).sum() / num_fg
@@ -407,11 +411,11 @@ class YOLOXHead(nn.Module):
             loss_l1 = 0.0
 
         reg_weight = 5.0
-        loss = reg_weight * loss_iou + loss_obj + loss_cls + loss_l1
+        loss = reg_weight * loss_focal + loss_obj + loss_cls + loss_l1 
 
         return (
             loss,
-            reg_weight * loss_iou,
+            reg_weight * loss_focal,
             loss_obj,
             loss_cls,
             loss_l1,
