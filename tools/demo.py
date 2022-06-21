@@ -12,7 +12,7 @@ import cv2
 import torch
 
 from yolox.data.data_augment import ValTransform
-from yolox.data.datasets import COCO_CLASSES
+from yolox.data.datasets import COCO_CLASSES, VOC_CLASSES
 from yolox.exp import get_exp
 from yolox.utils import fuse_model, get_model_info, postprocess, vis
 
@@ -102,7 +102,7 @@ class Predictor(object):
         self,
         model,
         exp,
-        cls_names=COCO_CLASSES,
+        cls_names=VOC_CLASSES,
         trt_file=None,
         decoder=None,
         device="cpu",
@@ -113,7 +113,7 @@ class Predictor(object):
         self.cls_names = cls_names
         self.decoder = decoder
         self.num_classes = exp.num_classes
-        self.confthre = exp.test_conf
+        self.confthre = exp.test_conf   
         self.nmsthre = exp.nmsthre
         self.test_size = exp.test_size
         self.device = device
@@ -212,9 +212,10 @@ def imageflow_demo(predictor, vis_folder, current_time, args):
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float
     fps = cap.get(cv2.CAP_PROP_FPS)
     if args.save_result:
-        save_folder = os.path.join(
-            vis_folder, time.strftime("%Y_%m_%d_%H_%M_%S", current_time)
-        )
+        # save_folder = os.path.join(
+        #     vis_folder, time.strftime("%Y_%m_%d_%H_%M_%S", current_time)
+        # )
+        save_folder = vis_folder
         os.makedirs(save_folder, exist_ok=True)
         if args.demo == "video":
             save_path = os.path.join(save_folder, os.path.basename(args.path))
@@ -303,7 +304,7 @@ def main(exp, args):
         decoder = None
 
     predictor = Predictor(
-        model, exp, COCO_CLASSES, trt_file, decoder,
+        model, exp, VOC_CLASSES, trt_file, decoder,
         args.device, args.fp16, args.legacy,
     )
     current_time = time.localtime()

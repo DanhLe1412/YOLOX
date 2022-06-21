@@ -126,7 +126,7 @@ class YOLOXHead(nn.Module):
         self.l1_loss = nn.L1Loss(reduction="none")
         self.bcewithlog_loss = nn.BCEWithLogitsLoss(reduction="none")
         self.iou_loss = IOUloss(reduction="none")
-        self.focal_loss = FocalLoss()
+        self.focal_loss = FocalLoss(nn.BCEWithLogitsLoss())
         self.strides = strides
         self.grids = [torch.zeros(1)] * len(in_channels)
 
@@ -387,7 +387,8 @@ class YOLOXHead(nn.Module):
         fg_masks = torch.cat(fg_masks, 0)
         if self.use_l1:
             l1_targets = torch.cat(l1_targets, 0)
-
+        print(reg_targets.shape)
+        print(bbox_preds.view(-1,4)[fg_masks].shape)
         num_fg = max(num_fg, 1)
         loss_iou = (
             self.iou_loss(bbox_preds.view(-1, 4)[fg_masks], reg_targets)
